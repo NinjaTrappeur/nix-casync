@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+port=2222
+nixCasyncBin="$1"
+chunkSize="$2"
+storePath="$3"
+
+stateDir=$(mktemp -d)
+trap 'rm -rf ${stateDir}' EXIT
+
+echo "[+] Starting nix-casync"
+${nixCasyncBin} serve --cache-path="${stateDir}" --listen-addr="[::]:${port}" --avg-chunk-size="${chunkSize}" &
+nixCasyncPid=$!
+trap 'rm -rf ${stateDir}; kill -2 ${nixCasyncPid}' EXIT
+
+echo "[+] Copy ${storePath} to casync"
+nix copy \
+  --extra-experimental-features nix-command \
+  --to "http://[::]:${port}" "${storePath}" \
+  --refresh
+
+echo "[+] Retrieving chunk-related metrics"
+find "${stateDir}" -name "*.cacnk" -printf "%s;%f\n" > ./result.txt
+echo "[+] Results saved at ./result.txt"
+echo "[+] Cleaning"
