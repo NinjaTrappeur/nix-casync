@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -eu -o pipefail
+
+storePath="$1"
+
+####################
+# Files Metrics
+####################
+
+echo "Name;Sha256;Size" > "${resultsFile}"
+
+closure=$(nix path-info -r "${storePath}")
+for path in ${closure}; do
+    find "${path}" -type f -exec bash -c '
+        f=$(basename "{}")
+        size=$(stat --printf="%s" "{}")
+        sha256=$(sha256sum "{}" | cut -d " " -f 1)
+        printf "%s;%s;%s\n" "${f}" "${sha256}" "${size}"
+    ' {} ";"
+done
