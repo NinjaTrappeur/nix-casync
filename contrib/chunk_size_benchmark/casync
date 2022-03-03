@@ -27,4 +27,4 @@ nix copy \
   --refresh
 
 echo "Chunk Size;Chunk Name" > "${resultsFile}"
-find "${casyncDir}" -name "*.cacnk" -printf "%s;%f\n" > "${resultsFile}"
+find "${casyncDir}" -name "*.cacnk" -printf "%s;%f\n" >> "${resultsFile}"
